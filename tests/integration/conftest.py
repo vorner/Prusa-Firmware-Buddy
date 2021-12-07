@@ -113,8 +113,9 @@ async def prepare_eeprom_content(eeprom_variables, basic_printer_arguments,
                              mount_dir_as_flash=flash_dir,
                              eeprom_content=(eeprom_bank_1,
                                              eeprom_bank_2)) as printer:
+        await asyncio.sleep(2)
         try:
-            await asyncio.wait_for(wait_for_eeprom_load(printer), timeout=10.0)
+            await asyncio.wait_for(wait_for_eeprom_load(printer), timeout=60.0)
         except asyncio.TimeoutError:
             pytest.fail('timed out while waiting for eeprom setup; '
                         'please check your firmware is compiled with '
