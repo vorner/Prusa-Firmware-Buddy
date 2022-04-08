@@ -5,6 +5,7 @@
 #include "../nhttp/gcode_upload.h"
 #include "../nhttp/job_command.h"
 #include "../nhttp/stateless_json.h"
+#include "../nhttp/debug_readfiles.h"
 #include "../wui_api.h"
 
 #include <cstring>
@@ -33,6 +34,16 @@ namespace {
 
 optional<ConnectionState> PrusaLinkApi::accept(const RequestParser &parser) const {
     const string_view uri = parser.uri();
+
+    // FIXME: This really doesn't belong here that much, but whatever..
+    if (parser.uri() == "/debug/xflash") {
+        DIR *d = opendir("/internal/res/esp");
+        if (d == nullptr) {
+            return StatusPage(Status::IMATeaPot, false);
+        } else {
+            return DebugReadFiles("/internal/res/esp", d, false);
+        }
+    }
 
     // Claim the whole /api prefix.
     const auto suffix_opt = remove_prefix(uri, "/api/");

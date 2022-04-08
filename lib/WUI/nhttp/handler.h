@@ -29,6 +29,7 @@
 #pragma once
 
 #include "types.h"
+#include "debug_readfiles.h"
 #include "file_info.h"
 #include "gcode_upload.h"
 #include "gcode_preview.h"
@@ -119,6 +120,7 @@ using ConnectionState = std::variant<
     SendStaticMemory,
     SendFile,
     StatelessJson,
+    DebugReadFiles,
     printer::GcodeUpload,
     printer::GCodePreview,
     printer::JobCommand,

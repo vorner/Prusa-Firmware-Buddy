@@ -15,6 +15,7 @@ target_sources(
             automata/core.cpp
             http_lifetime.cpp
             nhttp/common_selectors.cpp
+            nhttp/debug_readfiles.cpp
             nhttp/file_info.cpp
             nhttp/gcode_upload.cpp
             nhttp/gcode_preview.cpp
