@@ -851,6 +851,7 @@ target_sources(
           $<$<STREQUAL:${PRINTER},MINI>:src/common/minda_broken_cable_detection.cpp>
           $<$<STREQUAL:${PRINTER},MINI>:src/common/MindaRedscreen.cpp>
           src/common/Z_probe.cpp
+          src/common/http/types.cpp
           src/hw/buffered_serial.cpp
           src/hw/cpu_utils.cpp
           src/hw/main_check.cpp
