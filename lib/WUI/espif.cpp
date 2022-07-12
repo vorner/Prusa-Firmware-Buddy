@@ -282,12 +282,14 @@ static void process_link_change(bool link_up, struct netif *netif, bool delay) {
             log_info(ESPIF, "Link went up");
         }
         delayed_down = NO_DELAYED_DOWN;
+        /*
     } else if (delay) {
         // Set the timer for actually going down after a while. But:
         // * Give it time to go back up without any visible "effect"
         // * Don't re-schedule if there are two "downs" in a row.
         uint32_t no_delay = NO_DELAYED_DOWN;
         delayed_down.compare_exchange_strong(no_delay, half_now());
+        */
     } else {
         delayed_down = NO_DELAYED_DOWN;
         if (associated.exchange(false)) {
