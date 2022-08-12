@@ -73,6 +73,17 @@ JsonResult JsonOutput::output_field_arr(size_t resume_point, const char *name) {
     return output(resume_point, "\"%s\":[", name);
 }
 
+JsonResult JsonOutput::output_field_bin_hex(size_t resume_point, const char *name, const uint8_t *data, size_t len) {
+    char data_out[2 * len + 1];
+    data_out[2 * len] = '\0';
+
+    for (size_t i = 0; i < len; i++) {
+        sprintf(data_out + 2 * i, "%02hhX", data[i]);
+    }
+
+    return output_field_str(resume_point, name, data_out);
+}
+
 std::tuple<JsonResult, size_t> LowLevelJsonRenderer::render(uint8_t *buffer, size_t buffer_size) {
     size_t buffer_size_rest = buffer_size;
     JsonOutput output(buffer, buffer_size_rest, resume_point);

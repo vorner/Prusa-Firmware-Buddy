@@ -13,6 +13,7 @@
 #define JSON_FIELD_BOOL(NAME, VALUE)              JSON_OUT(__COUNTER__, output_field_bool, (NAME), (VALUE))
 #define JSON_FIELD_INT(NAME, VALUE)               JSON_OUT(__COUNTER__, output_field_int, (NAME), (VALUE))
 #define JSON_FIELD_FFIXED(NAME, VALUE, PRECISION) JSON_OUT(__COUNTER__, output_field_float_fixed, (NAME), (VALUE), (PRECISION))
+#define JSON_FIELD_BIN_HEX(NAME, DATA, LEN)       JSON_OUT(__COUNTER__, output_field_bin_hex, (NAME), (DATA), (LEN))
 #define JSON_FIELD_OBJ(NAME)                      JSON_OUT(__COUNTER__, output_field_obj, (NAME))
 #define JSON_FIELD_ARR(NAME)                      JSON_OUT(__COUNTER__, output_field_arr, (NAME))
 #define JSON_OBJ_START                            JSON_CONTROL("{")

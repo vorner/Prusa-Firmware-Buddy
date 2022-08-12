@@ -57,6 +57,8 @@ public:
     // Fixed precision
     JsonResult output_field_float_fixed(size_t resume_point, const char *name, double value, int precision);
     JsonResult output_field_str_format(size_t resume_point, const char *name, const char *format, ...);
+    // Note: only for small-ish data; will not split/resume in the middle
+    JsonResult output_field_bin_hex(size_t resume_point, const char *name, const uint8_t *data, size_t len);
     JsonResult output_field_obj(size_t resume_point, const char *name);
     JsonResult output_field_arr(size_t resume_point, const char *name);
 };

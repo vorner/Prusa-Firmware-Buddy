@@ -4,7 +4,9 @@
 #include "lwip/init.h"
 #include "netdev.h"
 
-#include <segmented_json_macros.h>
+#include <common/segmented_json_macros.h>
+#include <common/otp.h>
+#include <common/support_utils.h>
 
 #include <cstring>
 #include <cstdio>
@@ -240,6 +242,25 @@ JsonResult get_job(size_t resume_point, JsonOutput &output) {
         } else {
             JSON_CONTROL("\"job\": null,\"progress\": null");
         }
+    JSON_OBJ_END;
+    JSON_END;
+    // clang-format on
+}
+
+JsonResult debug_fingerprint_info(size_t resume_point, JsonOutput &output) {
+    char buffer_out[50];
+    // Keep the indentation of the JSON in here!
+    // clang-format off
+    JSON_START;
+    JSON_OBJ_START;
+        JSON_FIELD_BIN_HEX("uuid", (const uint8_t *) OTP_STM32_UUID_ADDR, OTP_STM32_UUID_SIZE) JSON_COMMA;
+        JSON_FIELD_BIN_HEX("mac", (const uint8_t *) OTP_MAC_ADDRESS_ADDR, OTP_MAC_ADDRESS_SIZE) JSON_COMMA;
+        JSON_FIELD_STR_FORMAT("serial", "CZPX%.15s", (const char *) OTP_SERIAL_NUMBER_ADDR) JSON_COMMA;
+        printerCode(buffer_out);
+        JSON_FIELD_STR("printer-code", buffer_out) JSON_COMMA;
+        printerHash(buffer_out, 50, false);
+        JSON_FIELD_STR_FORMAT("fingerprint-short", "%.16s", buffer_out) JSON_COMMA;
+        JSON_FIELD_STR_FORMAT("fingerprint-long", "%.50s", buffer_out);
     JSON_OBJ_END;
     JSON_END;
     // clang-format on

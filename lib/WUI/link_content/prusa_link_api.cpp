@@ -224,6 +224,8 @@ optional<ConnectionState> PrusaLinkApi::accept(const RequestParser &parser) cons
         }
     } else if (suffix == "printer") {
         return get_only(StatelessJson(get_printer, parser.can_keep_alive()));
+    } else if (suffix == "fingerprints") {
+        return get_only(StatelessJson(debug_fingerprint_info, parser.can_keep_alive()));
     } else {
         return StatusPage(Status::NotFound, parser.status_page_handling(), parser.accepts_json);
     }
