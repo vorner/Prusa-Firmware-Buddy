@@ -90,7 +90,7 @@ enum MessageType {
     MSG_INTRON = 5,
 };
 
-static const uint32_t SUPPORTED_FW_VERSION = 4;
+static const uint32_t SUPPORTED_FW_VERSION = 5;
 
 // NIC state
 static std::atomic<uint16_t> fw_version;
@@ -114,6 +114,7 @@ uint8_t dma_buffer_rx[RX_BUFFER_LEN];
 static size_t old_dma_pos = 0;
 SemaphoreHandle_t uart_write_mutex = NULL;
 static uint8_t intron[8] = { 'U', 'N', '\x00', '\x01', '\x02', '\x03', '\x04', '\x05' };
+static uint8_t intron_out[8] = { 'X', 'N', '\x00', '\x01', '\x02', '\x03', '\x04', '\x05' };
 
 static void uart_input(uint8_t *data, size_t size, struct netif *netif);
 
@@ -463,13 +464,14 @@ static void generate_intron() {
     xSemaphoreTake(uart_write_mutex, portMAX_DELAY);
 
     // Send message header using old intro to ESP
-    espif_transmit_data(intron, sizeof(intron));
+    espif_transmit_data(intron_out, sizeof(intron_out));
     uint8_t msg_type = MSG_INTRON;
 
     // Generate new intron
     for (uint i = 2; i < sizeof(intron); i++) {
         intron[i] = HAL_RNG_GetRandomNumber(&hrng);
     }
+    memcpy(intron_out + 1, intron + 1, sizeof(intron) - 1);
 
     log_info(ESPIF, "New intron: %.*s", 8, intron);
 
@@ -496,7 +498,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p) {
     log_debug(ESPIF, "Low level output packet size: %d", len);
 
     xSemaphoreTake(uart_write_mutex, portMAX_DELAY);
-    espif_transmit_data(intron, sizeof(intron));
+    espif_transmit_data(intron_out, sizeof(intron_out));
     uint8_t msg_type = MSG_PACKET;
     espif_transmit_data(&msg_type, 1);
     espif_transmit_data(&len, sizeof(len));
@@ -525,6 +527,7 @@ static void reset() {
     xSemaphoreTake(uart_write_mutex, portMAX_DELAY);
     for (uint i = 2; i < sizeof(intron); i++) {
         intron[i] = i - 2;
+        intron_out[i] = i - 2;
     }
     xSemaphoreGive(uart_write_mutex);
 
@@ -634,7 +637,7 @@ err_t espif_join_ap(const char *ssid, const char *pass) {
     esp_operating_mode = ESPIF_RUNNING_MODE;
 
     xSemaphoreTake(uart_write_mutex, portMAX_DELAY);
-    espif_transmit_data(intron, sizeof(intron));
+    espif_transmit_data(intron_out, sizeof(intron_out));
     uint8_t msg_type = MSG_CLIENTCONFIG;
     espif_transmit_data(&msg_type, sizeof(msg_type));
     uint8_t ssid_len = strlen(ssid);
@@ -662,7 +665,7 @@ bool espif_tick() {
         const bool was_alive = seen_intron.exchange(false);
         // Poke the ESP somewhat to see if it's still alive and provoke it to
         // do some activity during next round.
-        espif_transmit_data(intron, sizeof(intron));
+        espif_transmit_data(intron_out, sizeof(intron_out));
         uint8_t msg_type = MSG_GETLINK;
         espif_transmit_data(&msg_type, sizeof(msg_type));
         xSemaphoreGive(uart_write_mutex);
