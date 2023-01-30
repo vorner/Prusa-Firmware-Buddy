@@ -4,12 +4,14 @@
 
 #include <cstdlib>
 #include <charconv>
+#include <cstring>
 
 using json::Event;
 using json::Type;
 using std::errc;
 using std::from_chars;
 using std::get_if;
+using std::holds_alternative;
 using std::make_shared;
 using std::min;
 using std::move;
@@ -42,25 +44,29 @@ namespace {
     }
 }
 
-Command Command::gcode_command(CommandId id, const string_view &body, SharedBuffer::Borrow buff) {
-    if (body.size() > buff.size()) {
+Command Command::gcode_command(CommandId id, const string_view &body, BufferResetToken buff) {
+    auto *buffer = buff.buffer();
+    assert(buffer != nullptr && holds_alternative<monostate>(*buffer));
+    *buffer = GcodeBuffer {};
+    auto &gcode = get<GcodeBuffer>(*buffer);
+    if (body.size() > gcode.size()) {
         return Command {
             id,
             GcodeTooLarge {},
         };
     }
 
-    memcpy(buff.data(), body.data(), body.size());
+    memcpy(gcode.data(), body.data(), body.size());
     return Command {
         id,
         Gcode {
-            make_shared<SharedBuffer::Borrow>(move(buff)),
             body.size(),
+            make_shared<BufferResetToken>(move(buff)),
         },
     };
 }
 
-Command Command::parse_json_command(CommandId id, const string_view &body, SharedBuffer::Borrow buff) {
+Command Command::parse_json_command(CommandId id, const string_view &body, BufferResetToken buff) {
     jsmntok_t tokens[MAX_TOKENS];
 
     int parse_result;

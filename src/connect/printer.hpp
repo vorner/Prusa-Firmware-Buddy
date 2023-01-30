@@ -126,6 +126,11 @@ public:
         return info;
     }
 
+    // Note: The pointers in there may get invalidated when:
+    // * renew is called
+    // * A command is parsed
+    //
+    // Make sure not to reuse params across these events.
     virtual Params params() const = 0;
     virtual std::optional<NetInfo> net_info(Iface iface) const = 0;
     virtual NetCreds net_creds() const = 0;
@@ -135,7 +140,7 @@ public:
     //
     // FIXME: For now, this is a "black hole". It'll just submit it without any
     // kind of feedback. It'll either block if the queue is full, or just throw
-    // it in. But that doesn't meen it has been executed.
+    // it in. But that doesn't mean it has been executed.
     virtual void submit_gcode(const char *gcode) = 0;
     virtual bool set_ready(bool ready) = 0;
     virtual bool is_printing() const = 0;

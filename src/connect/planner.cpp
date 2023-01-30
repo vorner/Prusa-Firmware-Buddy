@@ -287,7 +287,7 @@ void Planner::command(const Command &command, const Gcode &gcode) {
     background_command = BackgroundCommand {
         command.id,
         BackgroundGcode {
-            gcode.gcode,
+            gcode.buffer,
             gcode.size,
             0,
         },
@@ -309,7 +309,9 @@ JC(Resume, "No paused print to resume")
 JC(Stop, "No print to stop")
 
 void Planner::command(const Command &command, const StartPrint &params) {
-    const char *path = params.path.path();
+    const auto *buffer = params.buffer->buffer();
+    assert(buffer != nullptr && holds_alternative<LongPathBuffer>(*buffer));
+    const char *path = get<LongPathBuffer>(*buffer).begin();
 
     const char *reason = nullptr;
     if (!path_allowed(path)) {

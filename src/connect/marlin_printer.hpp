@@ -1,8 +1,8 @@
 #pragma once
 
+#include "bigbuffer.hpp"
 #include "printer.hpp"
 
-#include <common/shared_buffer.hpp>
 #include <marlin_client.h>
 
 namespace connect_client {
@@ -10,7 +10,7 @@ namespace connect_client {
 class MarlinPrinter final : public Printer {
 private:
     marlin_vars_t *marlin_vars;
-    SharedBuffer &buffer;
+    BigBuffer &buffer;
     // The SET_PRINTER_READY & friends support. Eventually, this shall sync
     // with GUI and other places somehow. For now, only Connect-internal flag.
     bool ready = false;
@@ -19,7 +19,7 @@ protected:
     virtual Config load_config() override;
 
 public:
-    MarlinPrinter(SharedBuffer &buffer);
+    MarlinPrinter(BigBuffer &buffer);
     MarlinPrinter(const MarlinPrinter &other) = delete;
     MarlinPrinter(MarlinPrinter &&other) = delete;
     MarlinPrinter &operator=(const MarlinPrinter &other) = delete;

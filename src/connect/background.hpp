@@ -1,8 +1,7 @@
 #pragma once
 
+#include "bigbuffer.hpp"
 #include "command.hpp"
-
-#include <common/shared_buffer.hpp>
 
 #include <variant>
 
@@ -11,8 +10,8 @@ namespace connect_client {
 class Printer;
 
 struct BackgroundGcode {
-    // Stored without \0 at the back.
-    SharedBorrow data;
+    // The actual data is stored in the buffer.
+    BufferResetToken buffer;
     size_t size;
     size_t position;
 };

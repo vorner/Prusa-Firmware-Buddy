@@ -1,6 +1,7 @@
 target_sources(
   firmware
   PRIVATE background.cpp
+          bigbuffer.cpp
           command.cpp
           connect.cpp
           hostname.cpp

@@ -1,7 +1,8 @@
 #include "connect.hpp"
-#include <http/httpc.hpp>
 #include "tls/tls.hpp"
 #include "render.hpp"
+
+#include <http/httpc.hpp>
 #include <http/socket.hpp>
 
 #include <log.h>
@@ -221,11 +222,11 @@ Connect::ServerResp Connect::handle_server_resp(Response resp) {
         };
     }
 
-    auto buff(buffer.borrow());
-    if (!buff.has_value()) {
-        // We can only hold the buffer already borrowed in case we are still
-        // processing some command. In that case we can't accept another one
-        // and we just reject it.
+    if (!holds_alternative<monostate>(buffer) && !holds_alternative<MarlinPaths>(buffer)) {
+        // If it's empty or holding the "marlin vars" buffers, we are fine
+        // stealing the buffer for our own purposes. Otherwise, there's some
+        // other command we haven't yet resolved holding the buffer and we
+        // shall not touch it.
         return Command {
             command_id,
             ProcessingOtherCommand {},
@@ -241,9 +242,9 @@ Connect::ServerResp Connect::handle_server_resp(Response resp) {
     // the connection and all that.
     switch (resp.content_type) {
     case ContentType::TextGcode:
-        return Command::gcode_command(command_id, body, move(*buff));
+        return Command::gcode_command(command_id, body, BufferResetToken(&buffer));
     case ContentType::ApplicationJson:
-        return Command::parse_json_command(command_id, body, move(*buff));
+        return Command::parse_json_command(command_id, body, BufferResetToken(&buffer));
     default:;
         // If it's unknown content type, then it's unknown command because we
         // have no idea what to do about it / how to even parse it.
@@ -431,7 +432,7 @@ void Connect::run() {
     }
 }
 
-Connect::Connect(Printer &printer, SharedBuffer &buffer)
+Connect::Connect(Printer &printer, BigBuffer &buffer)
     : planner(printer)
     , printer(printer)
     , buffer(buffer) {}

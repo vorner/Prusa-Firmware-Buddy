@@ -4,7 +4,6 @@
 #include "command.hpp"
 #include "sleep.hpp"
 
-#include <common/shared_buffer.hpp>
 #include <transfers/monitor.hpp>
 #include <transfers/download.hpp>
 
@@ -40,7 +39,8 @@ struct Event {
     EventType type;
     std::optional<CommandId> command_id;
     std::optional<uint16_t> job_id;
-    std::optional<SharedPath> path;
+    // We may store a path in the buffer.
+    std::optional<SharedResetToken> buffer;
     std::optional<transfers::TransferId> transfer_id;
     /// Reason for the event. May be null.
     ///

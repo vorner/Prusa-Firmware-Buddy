@@ -1,11 +1,11 @@
 #pragma once
 
+#include "bigbuffer.hpp"
 #include "changes.hpp"
 #include "planner.hpp"
 #include "printer.hpp"
 
 #include <http/httpc.hpp>
-#include <common/shared_buffer.hpp>
 
 namespace connect_client {
 
@@ -44,7 +44,7 @@ private:
     uint32_t last_full_telemetry;
     Planner planner;
     Printer &printer;
-    SharedBuffer &buffer;
+    BigBuffer &buffer;
 
     using ServerResp = std::variant<std::monostate, Command, http::Error>;
 
@@ -55,7 +55,7 @@ private:
     Connect(Connect &&other) = delete;
 
 public:
-    Connect(Printer &printer, SharedBuffer &buffer);
+    Connect(Printer &printer, BigBuffer &buffer);
     void run(void) __attribute__((noreturn));
 };
 

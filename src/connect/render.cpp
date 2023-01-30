@@ -100,6 +100,10 @@ namespace {
         }
     }
 
+    std::tuple<const char *, const char *> extract_path_and_name(const optional<SharedResetToken> &buffer) {
+        TODO
+    }
+
     JsonResult render_msg(size_t resume_point, JsonOutput &output, const RenderState &state, const SendTelemetry &telemetry) {
         const auto params = state.printer.params();
         const bool printing = is_printing(params.state);
@@ -192,6 +196,7 @@ namespace {
         const auto &info = state.printer.printer_info();
         const bool has_extra = (event.type != EventType::Accepted) && (event.type != EventType::Rejected);
         const bool printing = is_printing(params.state);
+        auto [path, name] = extract_path_and_name(event.buffer);
 
         const char *reject_with = nullptr;
         Printer::NetCreds creds = {};
@@ -324,12 +329,17 @@ namespace {
                         JSON_FIELD_INT("size", state.st.st_size) JSON_COMMA;
                         JSON_FIELD_INT("m_timestamp", state.st.st_mtime) JSON_COMMA;
                     }
-                    // Warning: the path->name() is there (hidden) for FileInfo
-                    // but _not_ for JobInfo. Do not just copy that into that
-                    // part!
-                    JSON_FIELD_STR("display_name", event.path->name()) JSON_COMMA;
-                    JSON_FIELD_STR("type", state.file_extra.renderer.holds_alternative<DirRenderer>() ? "FOLDER" : file_type_by_ext(event.path->path())) JSON_COMMA;
-                    JSON_FIELD_STR("path", event.path->path());
+                    // Note: In case of FileInfo, the path and name is passed
+                    // through the buffer directly, while in case of JobInfo it
+                    // comes from marlin... therefore we have a different way
+                    // to obtain it here (through the buffer might contain them
+                    // too at that point).
+                    if (name != nullptr) {
+                        JSON_FIELD_STR("display_name", name) JSON_COMMA;
+                    }
+                    assert(path != nullptr);
+                    JSON_FIELD_STR("path", path) JSON_COMMA;
+                    JSON_FIELD_STR("type", state.file_extra.renderer.holds_alternative<DirRenderer>() ? "FOLDER" : file_type_by_ext(path));
                 JSON_OBJ_END JSON_COMMA;
             } else if (event.type == EventType::TransferInfo) {
                 JSON_FIELD_OBJ("data");
@@ -700,7 +710,11 @@ RenderState::RenderState(const Printer &printer, const Action &action, Tracked &
             }
             break;
         case EventType::FileInfo: {
-            assert(event->path.has_value());
+            assert(event->buffer.has_value());
+            auto buffer = event->buffer->buffer();
+            assert(buffer != nullptr);
+            assert(holds_alternative<CommandDetails>(buffer));
+            auto details = get<CommandDetails>(buffer);
             SharedPath spath = event->path.value();
             path = spath.path();
 

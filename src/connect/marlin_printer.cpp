@@ -19,6 +19,9 @@
 #include <mbedtls/sha256.h>
 #include <sys/statvfs.h>
 
+using std::get_if;
+using std::holds_alternative;
+using std::monostate;
 using std::nullopt;
 
 namespace connect_client {
@@ -191,7 +194,7 @@ namespace {
     }
 }
 
-MarlinPrinter::MarlinPrinter(SharedBuffer &buffer)
+MarlinPrinter::MarlinPrinter(BigBuffer &buffer)
     : buffer(buffer) {
     marlin_vars = marlin_client_init();
     assert(marlin_vars != nullptr);
@@ -217,10 +220,22 @@ MarlinPrinter::MarlinPrinter(SharedBuffer &buffer)
 }
 
 void MarlinPrinter::renew() {
-    if (auto b = buffer.borrow(); b.has_value()) {
-        marlin_vars->media_LFN = reinterpret_cast<char *>(b->data());
-        marlin_vars->media_SFN_path = reinterpret_cast<char *>(b->data() + FILE_NAME_BUFFER_LEN);
+    // The buffer is either used by a living command, in which case we don't
+    // use it to extract info from marlin (that is fine, because we won't need
+    // it, because we are working on a command), or it is free (in which case
+    // we claim it) or we reuse our own buffer from previous time.
+    //
+    // Note that this can be "stolen" from us in between rounds by parsing a command.
+    if (holds_alternative<monostate>(buffer)) {
+        // Buffer empty. We can use it.
+        buffer = PathAndName();
+    }
+    if (auto *path_and_name = get_if<PathAndName>(&buffer); path_and_name != nullptr) {
+        marlin_vars->media_LFN = path_and_name->name.begin();
+        marlin_vars->media_SFN_path = path_and_name->path.begin();
     } else {
+        // Make sure to reset the pointers for marlin server if it was set
+        // before, but we no longer have the buffer.
         marlin_vars->media_LFN = nullptr;
         marlin_vars->media_SFN_path = nullptr;
     }
@@ -248,8 +263,10 @@ Printer::Params MarlinPrinter::params() const {
     params.print_speed = marlin_vars->print_speed;
     params.flow_factor = marlin_vars->flow_factor;
     params.job_id = marlin_vars->job_id;
-    params.job_path = marlin_vars->media_SFN_path;
-    params.job_lfn = marlin_vars->media_LFN;
+    if (holds_alternative<PathAndName>(buffer)) {
+        params.job_path = marlin_vars->media_SFN_path;
+        params.job_lfn = marlin_vars->media_LFN;
+    } // else - already set to nullptr in the params = {} above
     params.print_fan_rpm = marlin_vars->print_fan_rpm;
     params.heatbreak_fan_rpm = marlin_vars->heatbreak_fan_rpm;
     params.print_duration = marlin_vars->print_duration;
