@@ -25,7 +25,7 @@ enum class OnlineStatus {
     Connecting, ///< Connecting in progress but no result yet
 };
 
-OnlineStatus last_status();
+std::tuple<OnlineStatus, uint32_t> last_status();
 
 enum class RequestType {
     Telemetry,

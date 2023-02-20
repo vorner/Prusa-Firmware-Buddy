@@ -22,6 +22,10 @@ MI_CONNECT_STATUS::MI_CONNECT_STATUS()
     : WI_INFO_t(_(label), nullptr, is_enabled_t::yes, is_hidden_t::no) {
 }
 
+MI_CONNECT_VALIDITY::MI_CONNECT_VALIDITY()
+    : WI_INFO_t(_(label), nullptr, is_enabled_t::yes, is_hidden_t::no) {
+}
+
 MI_CONNECT_LOAD_SETTINGS::MI_CONNECT_LOAD_SETTINGS()
     : WI_LABEL_t(_(label), nullptr, is_enabled_t::yes, is_hidden_t::no, expands_t::no) {}
 
@@ -43,7 +47,13 @@ void MI_CONNECT_LOAD_SETTINGS::click(IWindowMenu &window_menu) {
         break;
 
 void ScreenMenuConnect::updateStatus() {
-    switch (connect_client::last_status()) {
+    const auto [status, validity] = connect_client::last_status();
+
+    char buffer[12];
+    snprintf(buffer, sizeof buffer, "%" PRIu32, validity);
+    Item<MI_CONNECT_VALIDITY>().ChangeInformation(buffer);
+
+    switch (status) {
         S(Off, _("Off"));
         S(NoConfig, _("No Config"));
         S(NoDNS, _("DNS error"));

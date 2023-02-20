@@ -3,6 +3,7 @@
 #include "tls/tls.hpp"
 #include "render.hpp"
 #include <http/socket.hpp>
+#include <timing.h>
 
 #include <log.h>
 
@@ -39,6 +40,7 @@ inline constexpr uint8_t SOCKET_TIMEOUT_SEC = 3;
 namespace {
 
     std::atomic<OnlineStatus> last_known_status = OnlineStatus::Unknown;
+    std::atomic<uint32_t> last_known_time = 0;
 
     OnlineStatus err_to_status(const Error error) {
         switch (error) {
@@ -427,6 +429,7 @@ void Connect::run() {
         const auto new_status = communicate(conn_factory);
         if (new_status.has_value()) {
             last_known_status = *new_status;
+            last_known_time = ticks_s();
         }
     }
 }
@@ -436,8 +439,8 @@ Connect::Connect(Printer &printer, SharedBuffer &buffer)
     , printer(printer)
     , buffer(buffer) {}
 
-OnlineStatus last_status() {
-    return last_known_status;
+std::tuple<OnlineStatus, uint32_t> last_status() {
+    return std::make_tuple(last_known_status.load(), last_known_time.load());
 }
 
 }
