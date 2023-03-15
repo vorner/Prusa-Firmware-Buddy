@@ -2,6 +2,10 @@
 #include "../png_resources.hpp"
 #include "../ScreenHandler.hpp"
 
+#include <connect/connect.hpp>
+
+using connect_client::OnlineStatus;
+
 namespace {
 
 const PhaseResponses dlg_responses = { Response::Continue, Response::_none, Response::_none, Response::_none };
@@ -17,13 +21,21 @@ DialogConnectRegister::DialogConnectRegister()
     , qr(this, Positioner::qrcodeRect(), "Test test")
     , text(this, Positioner::textRect(), is_multiline::yes)
     , button(this, WizardDefaults::RectRadioButton(0), dlg_responses, &ph_txt_continue) {
+
     DialogShown = true;
     text.SetText(_("Lorem ipsum"));
+
+    // Show these only after we get the code.
+    qr.Hide();
+    icon_phone.Hide();
+
+    connect_client::request_registration();
 }
 
 DialogConnectRegister::~DialogConnectRegister() {
     DialogShown = false;
-    // TODO: Leave connect registration
+
+    connect_client::leave_registration();
 }
 
 void DialogConnectRegister::Show() {
@@ -38,6 +50,49 @@ void DialogConnectRegister::windowEvent(EventLock, window_t *sender, GUI_event_t
         // We have a single button, so this simplification should work fine.
         Screens::Access()->Close();
         break;
+    case GUI_event_t::LOOP: {
+        const OnlineStatus status = connect_client::last_status();
+        if (status != last_seen_status) {
+            switch (status) {
+            case OnlineStatus::RegistrationCode: {
+                const char *code = connect_client::registration_code();
+                // The MakeRAM doesn't copy it, it just passes the pointer
+                // through and assumes the data live for long enough.
+                //
+                // This is OK here, as the registration_code is stable and not
+                // changing until we leave the registration, which we do in our
+                // destructor.
+                qr.SetText(code);
+                qr.Show();
+                icon_phone.Show();
+                text.SetText(string_view_utf8::MakeRAM(reinterpret_cast<const uint8_t *>(code)));
+                break;
+            }
+            case OnlineStatus::RegistrationDone: {
+                qr.Hide();
+                icon_phone.Hide();
+                text.SetText(_("Done!"));
+                break;
+            }
+            case OnlineStatus::RegistrationError: {
+                qr.Hide();
+                icon_phone.Hide();
+                text.SetText(_("Registration failed. Likely a network error. Try again later."));
+                break;
+            }
+            default:
+                // Some other state:
+                // * Unknown.
+                // * Getting the code.
+                // * Leftover from normal connect session.
+                //
+                // For these, we just keep the default.
+                break;
+            }
+            last_seen_status = status;
+        }
+        break;
+    }
     default:
         SuperWindowEvent(sender, event, param);
         break;

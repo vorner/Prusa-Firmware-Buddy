@@ -5,6 +5,8 @@
 #include <window_qr.hpp>
 #include "radio_button.hpp"
 
+#include <connect/status.hpp>
+
 class DialogConnectRegister : public AddSuperWindow<IDialog> {
 private:
     static bool DialogShown;
@@ -40,6 +42,8 @@ private:
         /** @returns Rect16 position and size of the text widget */
         static constexpr Rect16 textRect();
     };
+
+    connect_client::OnlineStatus last_seen_status = connect_client::OnlineStatus::Unknown;
 
     window_header_t header;
     window_icon_t icon_phone;
