@@ -3,6 +3,7 @@
  */
 
 #include "screen_menu_connect.hpp"
+#include "dialogs/DialogConnectReg.hpp"
 #include "printers.h"
 #include <window_msgbox.hpp>
 #include <connect/connect.hpp>
@@ -42,24 +43,7 @@ MI_CONNECT_REGISTER::MI_CONNECT_REGISTER()
 }
 
 void MI_CONNECT_REGISTER::click(IWindowMenu &window_menu) {
-    const auto status = connect_client::last_status();
-    bool in_registration;
-    switch (status) {
-    case OnlineStatus::RegistrationCode:
-    case OnlineStatus::RegistrationDone:
-    case OnlineStatus::RegistrationRequesting:
-    case OnlineStatus::RegistrationError:
-        in_registration = true;
-        break;
-    default:
-        in_registration = false;
-        break;
-    }
-    if (in_registration) {
-        connect_client::leave_registration();
-    } else {
-        connect_client::request_registration();
-    }
+    DialogConnectRegister::Show();
 }
 
 MI_CONNECT_CODE::MI_CONNECT_CODE()
